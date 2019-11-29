@@ -1,0 +1,168 @@
+package com.example.hk.whywhy;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.RatingBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by HK on 2019-10-25.
+ */
+
+public class ReviewDialog extends Dialog {
+
+    private ImageView review_poster;
+    private TextView review_title, review_release, review_director, review_rate;
+    private Button btn_confrim, btn_cancle;
+    private RatingBar rating_bar;
+    private EditText review_edit;
+    private String title, release, director, rate, img_url, mID, user_name;
+    private static String URL_REGREPLY = "http://kimyw1196.dothome.co.kr/addreply.php";
+    SessionManager sessionManager;
+
+    //private String mTitle;
+    //private String mContent;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            WindowManager.LayoutParams lpWindow = new WindowManager.LayoutParams();
+            lpWindow.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+            lpWindow.dimAmount = 0.8f;
+            getWindow().setAttributes(lpWindow);
+
+        setContentView(R.layout.activity_popup);
+
+        review_title = (TextView)findViewById(R.id.review_title);
+        review_release = (TextView)findViewById(R.id.review_release);
+        review_director = (TextView)findViewById(R.id.review_director);
+        review_rate = (TextView)findViewById(R.id.review_rate);
+
+        rating_bar = (RatingBar)findViewById(R.id.rating_bar);
+
+        btn_cancle = (Button)findViewById(R.id.btn_cancle);
+        btn_confrim = (Button)findViewById(R.id.btn_confirm);
+        review_edit = (EditText)findViewById(R.id.review_edit);
+
+        review_poster = (ImageView)findViewById(R.id.review_poster);
+
+        review_title.setText(title);
+        review_release.setText(release);
+        review_director.setText(director);
+        review_rate.setText(rate);
+        GlideApp.with(this.getContext())
+                .load(img_url)
+                .override(300,400)
+                .into(review_poster);
+
+        sessionManager = new SessionManager(getContext());
+        sessionManager.checkLogin();
+
+        HashMap<String, String> user = sessionManager.getUserDetail();
+        user_name = user.get(sessionManager.NAME);
+
+        btn_confrim.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Regist();
+                ReviewDialog.this.dismiss();
+            }
+        });
+
+        btn_cancle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //to do
+                ReviewDialog.this.dismiss();
+            }
+        });
+
+
+    }
+
+    public  ReviewDialog(Context context, String title,
+                         String release, String director, String rate, String img_url, String mID) {
+        super(context, android.R.style.Theme_Translucent_NoTitleBar);
+
+        this.title = title;
+        this.release = release;
+        this.director = director;
+        this.rate = rate;
+        this.img_url = img_url;
+        this.mID = mID;
+        Log.d("HEREHERE", this.mID);
+    }
+
+    private void Regist(){
+
+        final String movie_id = this.mID;
+        final String replyer = this.user_name;
+        final String reply = this.review_edit.getText().toString().trim();
+        final String rating = Float.toString(this.rating_bar.getRating());
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_REGREPLY,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try{
+                            JSONObject jsonObject = new JSONObject(response);
+                            String success = jsonObject.getString("success");
+
+                            if (success.equals("1")) {
+                                Toast.makeText(getContext(), "리뷰 등록 완료!", Toast.LENGTH_SHORT).show();
+                            }
+
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Toast.makeText(getContext(), "JSON오류" + e.toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(getContext(), "리뷰 등록 오류... " + error.toString(), Toast.LENGTH_SHORT).show();
+
+                    }
+                })
+
+        {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("movie_id", movie_id);
+                params.put("replyer", replyer);
+                params.put("reply", reply);
+                params.put("rating", rating);
+                return params;
+            }
+        };
+
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+        requestQueue.add(stringRequest);
+
+    }
+}
