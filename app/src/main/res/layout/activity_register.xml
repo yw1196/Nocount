@@ -16,6 +16,7 @@
         android:weightSum="2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
         android:orientation="horizontal">
 
         <android.support.design.widget.TextInputLayout
@@ -33,6 +34,7 @@
 
         <Button
             android:id="@+id/btn_val1"
+            android:background="@drawable/btn_background"
             android:text="중복확인"
             android:layout_weight="1"
             android:layout_width="200dp"
@@ -45,6 +47,7 @@
     <LinearLayout
         android:layout_below="@+id/layout_text"
         android:weightSum="2"
+        android:paddingBottom="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -64,6 +67,7 @@
 
         <Button
             android:id="@+id/btn_val2"
+            android:background="@drawable/btn_background"
             android:text="중복확인"
             android:layout_weight="1"
             android:layout_width="200dp"
@@ -74,6 +78,7 @@
     <android.support.design.widget.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
         app:passwordToggleEnabled="true">
         <EditText
             android:id="@+id/password"
@@ -106,10 +111,9 @@
 
     <Button
         android:id="@+id/btn_regist"
-        android:backgroundTint="@color/colorPrimary"
+        android:background="@drawable/btn_background"
         android:text="등록하기"
         android:layout_marginTop="30dp"
-        android:textColor="@android:color/white"
         android:layout_width="match_parent"
         android:layout_height="55dp" />
 

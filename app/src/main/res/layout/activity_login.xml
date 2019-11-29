@@ -12,7 +12,7 @@
 
     <ImageView
         android:id="@+id/logo"
-        android:src="@drawable/logo2"
+        android:src="@mipmap/star_icon"
         android:layout_marginBottom="30dp"
         android:layout_width="match_parent"
         android:layout_height="100dp" />
@@ -62,7 +62,7 @@
         android:id="@+id/btn_login"
         android:layout_below="@+id/layoutpassword"
         android:layout_marginTop="30dp"
-        android:backgroundTint="@color/colorPrimary2"
+        android:background="@drawable/btn_background"
         android:text="로그인"
         android:textColor="@color/colorText"
         android:layout_width="match_parent"
