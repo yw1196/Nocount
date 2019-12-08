@@ -18,9 +18,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class EnjoyAdapter extends RecyclerView.Adapter<EnjoyAdapter.ViewHolder> {
 
@@ -29,6 +42,7 @@ public class EnjoyAdapter extends RecyclerView.Adapter<EnjoyAdapter.ViewHolder> 
     private Context context;
     private Resources resources;
     private Drawable drawable, drawable2;
+    private static String URL_TLIKEACTION = "http://kimyw1196.dothome.co.kr/tlikeaction.php";
 
 
     public  class ViewHolder extends RecyclerView.ViewHolder {
@@ -61,6 +75,7 @@ public class EnjoyAdapter extends RecyclerView.Adapter<EnjoyAdapter.ViewHolder> 
         sessionManager = new SessionManager(context);
         HashMap<String, String> user = sessionManager.getUserDetail();
         String get_id = user.get(sessionManager.NAME);
+        String temp = user.get(sessionManager.ID);
 
         drawable = ResourcesCompat.getDrawable(resources, R.drawable.custom_btn2, null);
         drawable2 = ResourcesCompat.getDrawable(resources, R.drawable.custom_btn, null);
@@ -68,6 +83,8 @@ public class EnjoyAdapter extends RecyclerView.Adapter<EnjoyAdapter.ViewHolder> 
         //로그인한 상태이고 내가 단 태그이면 색상 변경
         if(sessionManager.isLogin() && get_id.trim().equals(taglist.get(position).getTagger())) {
             holder.btn_enjoy.setBackground(drawable);
+        }else {
+            holder.btn_enjoy.setBackground(drawable2);
         }
 
         holder.btn_enjoy.setOnClickListener(new View.OnClickListener() {
@@ -84,4 +101,46 @@ public class EnjoyAdapter extends RecyclerView.Adapter<EnjoyAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() { return taglist.size(); }
+
+    private void tlikeaction(final String tno, final String id){
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_TLIKEACTION,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(response);
+                            String success = jsonObject.getString("success");
+
+                            if(success.equals("1")){
+                                Toast.makeText(context, "공감 ~", Toast.LENGTH_SHORT).show();
+                            }
+
+                            if(success.equals("2")){
+                                Toast.makeText(context, "공감 취소 ~", Toast.LENGTH_SHORT).show();
+                            }
+
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                })
+        {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                return super.getParams();
+            }
+        };
+
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
+        requestQueue.add(stringRequest);
+
+    }
 }

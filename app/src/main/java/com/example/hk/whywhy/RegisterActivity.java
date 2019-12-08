@@ -1,8 +1,9 @@
 package com.example.hk.whywhy;
 
-import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -50,11 +51,45 @@ public class RegisterActivity extends AppCompatActivity {
         btn_val1 = findViewById(R.id.btn_val1);
         btn_val2 = findViewById(R.id.btn_val2);
 
+        name.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                val1 = false;
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        email.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                val2 = false;
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
         btn_val1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String temp = name.getText().toString().trim();
-                if(temp.equals("")){
+                if (temp.equals("")) {
                     Toast.makeText(RegisterActivity.this, "아이디를 입력해 주세요", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -66,7 +101,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String temp = email.getText().toString().trim();
-                if(temp.equals("")){
+                if (temp.equals("")) {
                     Toast.makeText(RegisterActivity.this, "이메일을 입력해 주세요", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -79,37 +114,34 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if(val1==false){
-                    Toast.makeText(RegisterActivity.this,"아이디 중복확인을 해주세요", Toast.LENGTH_SHORT).show();
+                if (val1 == false) {
+                    Toast.makeText(RegisterActivity.this, "아이디 중복확인을 해주세요", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if(val2==false){
-                    Toast.makeText(RegisterActivity.this,"이메일 중복확인을 해주세요", Toast.LENGTH_SHORT).show();
+                if (val2 == false) {
+                    Toast.makeText(RegisterActivity.this, "이메일 중복확인을 해주세요", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if(password.getText().toString().trim().equals("")){
+                if (password.getText().toString().trim().equals("")) {
                     Toast.makeText(RegisterActivity.this, "비밀번호는 빈칸일 수 없습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if(!password.getText().toString().equals(c_password.getText().toString())) { // 비밀번호, 비밀번호 확인 불일치
+                if (!password.getText().toString().equals(c_password.getText().toString())) { // 비밀번호, 비밀번호 확인 불일치
                     Toast.makeText(RegisterActivity.this, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 Regist();
-                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                startActivity(intent);
-
 
             }
         });
 
     }
 
-    private void Regist(){
+    private void Regist() {
         loading.setVisibility(View.VISIBLE);
         btn_regist.setVisibility(View.GONE);
 
@@ -122,7 +154,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                     @Override
                     public void onResponse(String response) {
-                        try{
+                        try {
                             JSONObject jsonObject = new JSONObject(response);
                             String success = jsonObject.getString("success");
 
@@ -130,9 +162,9 @@ public class RegisterActivity extends AppCompatActivity {
                                 Toast.makeText(RegisterActivity.this, "회원가입 완료!", Toast.LENGTH_SHORT).show();
                                 loading.setVisibility(View.GONE);
                                 btn_regist.setVisibility(View.VISIBLE);
-                            }else{
+                            } else {
                                 Toast.makeText(RegisterActivity.this, "success.equals(\"1\") = false", Toast.LENGTH_SHORT).show();
-                                Log.d("success 값:",success);
+                                Log.d("success 값:", success);
                                 loading.setVisibility(View.GONE);
                                 btn_regist.setVisibility(View.VISIBLE);
                             }
@@ -172,7 +204,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     }
 
-    private void Valdate1(){
+    private void Valdate1() {
         final String name = this.name.getText().toString().trim();
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_VAL1,
@@ -184,10 +216,10 @@ public class RegisterActivity extends AppCompatActivity {
                             JSONObject jsonObject = new JSONObject(response);
                             String success = jsonObject.getString("success");
 
-                            if(success.equals("1")){
+                            if (success.equals("1")) {
                                 val1 = true;
                                 Toast.makeText(RegisterActivity.this, "사용 가능한 아이디 입니다.", Toast.LENGTH_SHORT).show();
-                            }else{
+                            } else {
                                 Toast.makeText(RegisterActivity.this, "이미 존재하는 아이디입니다.", Toast.LENGTH_SHORT).show();
                             }
 
@@ -202,8 +234,7 @@ public class RegisterActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
 
                     }
-                })
-        {
+                }) {
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<>();
@@ -216,7 +247,7 @@ public class RegisterActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
-    private void Valdate2(){
+    private void Valdate2() {
         final String email = this.email.getText().toString().trim();
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_VAL2,
@@ -228,10 +259,10 @@ public class RegisterActivity extends AppCompatActivity {
                             JSONObject jsonObject = new JSONObject(response);
                             String success = jsonObject.getString("success");
 
-                            if(success.equals("1")){
+                            if (success.equals("1")) {
                                 val2 = true;
                                 Toast.makeText(RegisterActivity.this, "사용 가능한 이메일 입니다.", Toast.LENGTH_SHORT).show();
-                            }else{
+                            } else {
                                 Toast.makeText(RegisterActivity.this, "이미 존재하는 이메일입니다.", Toast.LENGTH_SHORT).show();
                             }
 
@@ -246,8 +277,7 @@ public class RegisterActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
 
                     }
-                })
-        {
+                }) {
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<>();

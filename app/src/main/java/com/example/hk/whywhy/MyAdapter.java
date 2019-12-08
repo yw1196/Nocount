@@ -60,7 +60,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         //holder.textView_rate.setText(String.valueOf(mList.get(position).getRate()));
         //다 해줬는데도 GlideApp 에러가 나면 rebuild project를 해주자.
         GlideApp.with(holder.itemView).load(mList.get(position).getImg_url())
-                .override(300,400)
+                .override(400,500)
                 .into(holder.imageView_img);
 
         holder.imageView_img.setOnClickListener(new View.OnClickListener() {

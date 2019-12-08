@@ -107,8 +107,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                Document doc = Jsoup.connect("https://movie.naver.com/movie/running/current.nhn").get();
-                Document doc2 = Jsoup.connect("https://movie.naver.com/movie/running/premovie.nhn").get();
+                Document doc = Jsoup.connect("https://movie.naver.com/movie/running/current.nhn").timeout(10*1000).get(); // 10초는 기다려 드릴게
+                Document doc2 = Jsoup.connect("https://movie.naver.com/movie/running/premovie.nhn").timeout(10*1000).get();
 
                 Elements mElementDataSize = doc.select("ul[class=lst_detail_t1]").select("li"); //필요한 녀석만 꼬집어서 지정
                 Elements mElementDataSize2 = doc2.select("ul[class=lst_detail_t1]").select("li");

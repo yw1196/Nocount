@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import android.os.AsyncTask;
+
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -50,18 +52,22 @@ public class DetailActivity extends AppCompatActivity {
     private String img_url;
     private String link;
     private String mID;
-    private Bitmap image , resized_image;
+    private String user_name, edit_get;
+    private Bitmap image, resized_image;
     private int width = 300;
     private int height = 400;
-    private static String URL_GETMOVIEDATA = "http://kimyw1196.dothome.co.kr/getmoviedata.php";
+    private static String URL_GETMOVIEDATA = "http://kimyw1196.dothome.co.kr/getreviewdata.php";
     private static String URL_ADDTAG = "http://kimyw1196.dothome.co.kr/addtag.php";
     private static String URL_GETTAG = "http://kimyw1196.dothome.co.kr/gettagdata.php";
-    SessionManager sessionManager;
-    private String user_name, edit_get;
+    private SessionManager sessionManager;
+
     private Resources res;
 
     private ArrayList<Review> reviews = new ArrayList<>();
     private ArrayList<Enjoy> tags = new ArrayList<>();
+
+    private EnjoyAdapter eAdapter;
+    private ReviewAdapter rvAdapter;
 
     private RecyclerView re_tag, re_review;
 
@@ -81,7 +87,7 @@ public class DetailActivity extends AppCompatActivity {
         img_url = intent.getStringExtra("img_url");
         rate = intent.getStringExtra("rate");
         link = intent.getStringExtra("link");
-        image = (Bitmap)intent.getParcelableExtra("image");
+        image = (Bitmap) intent.getParcelableExtra("image");
         mID = link.replaceAll("[^0-9]", "");
 
 
@@ -100,46 +106,9 @@ public class DetailActivity extends AppCompatActivity {
 
         TextView tv_rate = (TextView) findViewById(R.id.review_rate);
         tv_rate.setText(rate);
-
-        //리뷰 버튼 리스너
-
-        Button btn_review = (Button)findViewById(R.id.btn_review);
-        btn_review.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                reviewDialog = new ReviewDialog(DetailActivity.this, title, release, director, rate, img_url, mID);
-                reviewDialog.show();
-            }
-        });
-
-        //태그 및 태그 등록버튼 리스너
-        TextInputLayout TI_layout = (TextInputLayout) findViewById(R.id.TI_layout);
-        TI_layout.setCounterEnabled(true);
-        TI_layout.setCounterMaxLength(10);
-        final TextInputEditText TI_edit= (TextInputEditText) findViewById(R.id.TI_edit);
-        Button TI_btn = (Button) findViewById(R.id.TI_btn);
-
-        TI_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                edit_get = TI_edit.getText().toString().trim();
-
-                if(edit_get.trim().equals("")){
-                    Toast.makeText(DetailActivity.this, "태그를 입력해주세요", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                tag_regist(edit_get);
-                //new Async().execute();
-            }
-        });
-
-        //리뷰 모아보기
-        final TextView tv_sum = (TextView) findViewById(R.id.review_sum);
-
+        //포스터
         ImageView iv_poster = (ImageView) findViewById(R.id.review_poster);
-        if(img_url == null) {
+        if (img_url == null) {
             iv_poster.setImageBitmap(image); //or resized_image
         } else {
             GlideApp.with(this)
@@ -148,14 +117,103 @@ public class DetailActivity extends AppCompatActivity {
                     .into(iv_poster);
         }
 
-        sessionManager = new SessionManager(this);
-        //sessionManager.checkLogin();
+        //리뷰 버튼 초기화 및 리스너
+        Button btn_review = (Button) findViewById(R.id.btn_review);
+        btn_review.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(sessionManager.isLogin()) {
+                    reviewDialog = new ReviewDialog(DetailActivity.this, title, release, director, rate, img_url, mID, reviews, rvAdapter);
+                    reviewDialog.show();
+                    if (reviews.isEmpty())
+                        new Async().execute();
+                } else {
+                    Toast.makeText(DetailActivity.this, "로그인이 필요한 서비스입니다.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
-        HashMap<String, String> user = sessionManager.getUserDetail();
-        user_name = user.get(sessionManager.NAME);
+        final TextView tv_sum = (TextView) findViewById(R.id.review_sum);
 
+        //태그 레이아웃 및 태그 등록버튼 리스너
+        TextInputLayout TI_layout = (TextInputLayout) findViewById(R.id.TI_layout);
+        TI_layout.setCounterEnabled(true);
+        TI_layout.setCounterMaxLength(10);
+        final TextInputEditText TI_edit = (TextInputEditText) findViewById(R.id.TI_edit);
+        Button TI_btn = (Button) findViewById(R.id.TI_btn);
+
+        //어뎁터
+        rvAdapter = new ReviewAdapter(reviews, DetailActivity.this);
+        eAdapter = new EnjoyAdapter(tags, DetailActivity.this, res);
+
+        TI_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //로그인 했는지 확인 해야 한다.
+                if(!sessionManager.isLogin()) {
+                    Toast.makeText(DetailActivity.this, "로그인이 필요한 서비스입니다.", Toast.LENGTH_SHORT).show();
+                    sessionManager.checkLogin();
+                    return;
+                }
+
+                edit_get = TI_edit.getText().toString().trim();
+                boolean checker = true;
+
+                //tags 어레이가 비어있으면 editText값을 DB에 저장 후 recyclerview에 adapter를 연결 하여 뷰 갱신
+                if (tags.isEmpty()) {
+                    tag_regist(edit_get);
+                    get_tag();
+                    eAdapter.notifyDataSetChanged();
+                    Log.d("hiiz", String.valueOf(tags.size()));
+                    return;
+                }
+                if (edit_get.trim().equals("")) {
+                    Toast.makeText(DetailActivity.this, "태그를 입력해주세요", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Log.d("size", String.valueOf(tags.size()));
+                //tags의 size가 1이 될 경우 이중포문이 돌아가지 않게 된다. 어떻게 해결해야 하지?
+                for (int i = 0; i < tags.size(); i++) {
+                    if (tags.size() == 1 && edit_get.equals(tags.get(i).getTag_text())) {
+                        Toast.makeText(DetailActivity.this, "이미 존재하는 태그입니다.", Toast.LENGTH_SHORT).show();
+                        Log.d("yyy", "중복값있음");
+                        break;
+                    }
+                    //checker 확인 부분과 중복되어서 삭제
+                    /*else if (tags.size() == 1 && !edit_get.equals(tags.get(i).getTag_text())) {
+                        tag_regist(edit_get);
+                        //tags.add(0, new Enjoy(user_name, edit_get, 0));
+                        //eAdapter.notifyDataSetChanged();
+                        break;
+                    }*/
+                    for (int j = 0; j < i+1; j++) {
+                        Log.d("text", tags.get(j).getTag_text());
+                        if (edit_get.equals(tags.get(j).getTag_text())) {
+                            Toast.makeText(DetailActivity.this, "이미 존재하는 태그입니다.", Toast.LENGTH_SHORT).show();
+                            Log.d("zzz", "중복값있음");
+                            checker = false;
+                            break;
+                        }
+                    }
+                }
+                //true로 사용되는 지역변수 checker가 중복검사에 걸려 false가 될 시 실행되지 않는다.
+                if (checker) {
+                    tag_regist(edit_get);
+                    tags.add(0, new Enjoy("empty", user_name, edit_get, "0"));
+                    eAdapter.notifyItemInserted(0);
+                }
+            }
+        });
+
+
+            sessionManager = new SessionManager(this);
+            HashMap<String, String> user = sessionManager.getUserDetail();
+            user_name = user.get(sessionManager.NAME);
+        //get_tag 메소드를 사용하여 태그 정보를 DB로부터 받아와 리사이클러뷰 어뎁터에 연결 후 화면에 표시
         get_tag();
 
+        //부득이하게 메소드로 사용 불가 tv_sum값을 만족시켜주지 못한다... 왜 size값을 못 받아오지?
         //private void getDate() {
         final String movie_id = this.mID;
 
@@ -163,32 +221,31 @@ public class DetailActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        Log.i("here",response.toString());
+                        Log.i("here", response.toString());
 
-                        try{
+                        try {
                             JSONObject jsonObject = new JSONObject(response);
                             String success = jsonObject.getString("success");
                             JSONArray jsonArray = jsonObject.getJSONArray("read");
 
-                            if(success.equals("1")){
+                            if (success.equals("1")) {
 
-                                for(int i=0;i<jsonArray.length();i++){
+                                for (int i = 0; i < jsonArray.length(); i++) {
                                     JSONObject object = jsonArray.getJSONObject(i);
+                                    String t0 = object.getString("rno").trim();
                                     String t1 = object.getString("replyer").trim();
                                     String t2 = object.getString("reply").trim();
                                     String t3 = object.getString("rating").trim();
                                     String t4 = object.getString("likeno").trim();
                                     String t5 = object.getString("regdate").trim();
 
-                                    reviews.add(new Review(t1,t2,t3,t4,t5));
+                                    reviews.add(new Review(t0, t1, t2, t3, t4, t5));
 
-                                    ReviewAdapter rvAdapter = new ReviewAdapter(reviews, DetailActivity.this);
-                                    rvAdapter.notifyDataSetChanged();
                                     RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this);
                                     re_review.setLayoutManager(layoutManager);
                                     re_review.setAdapter(rvAdapter);
 
-                                    tv_sum.setText("총 " + reviews.size() + "건" );
+                                    tv_sum.setText("총 " + reviews.size() + "건");
                                 }
                             }
                         } catch (JSONException e) {
@@ -216,7 +273,8 @@ public class DetailActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
-    /*private class Async extends AsyncTask<Void, Void, Void> {
+    //다이얼로그에서 첫 리뷰를 갱신해주지 못해 AsyncTask를 사용하여준다.
+    private class Async extends AsyncTask<Void, Void, Void> {
 
         private String async_mID = mID;
         private ProgressDialog progressDialog;
@@ -234,34 +292,39 @@ public class DetailActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... voids) {
+
             final String movie_id = this.async_mID;
 
-            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_GETTAG,
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_GETMOVIEDATA,
                     new Response.Listener<String>() {
                         @Override
                         public void onResponse(String response) {
+                            Log.i("here", response.toString());
+
                             try {
                                 JSONObject jsonObject = new JSONObject(response);
                                 String success = jsonObject.getString("success");
                                 JSONArray jsonArray = jsonObject.getJSONArray("read");
 
-                                if(success.equals("1")){
+                                if (success.equals("1")) {
 
-                                    for(int i =0;i<jsonArray.length();i++){
+                                    for (int i = 0; i < jsonArray.length(); i++) {
                                         JSONObject object = jsonArray.getJSONObject(i);
-                                        String t1 = object.getString("tagger").trim();
-                                        String t2 = object.getString("tag_text").trim();
-                                        int t3 = object.getInt("tag_like");
+                                        String t0 = object.getString("rno").trim();
+                                        String t1 = object.getString("replyer").trim();
+                                        String t2 = object.getString("reply").trim();
+                                        String t3 = object.getString("rating").trim();
+                                        String t4 = object.getString("likeno").trim();
+                                        String t5 = object.getString("regdate").trim();
 
-                                        tags.add(new Enjoy(t1, t2, t3));
+                                        reviews.add(new Review(t0, t1, t2, t3, t4, t5));
+
+
                                     }
-
                                 }
-
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
-
                         }
                     },
                     new Response.ErrorListener() {
@@ -270,12 +333,13 @@ public class DetailActivity extends AppCompatActivity {
 
                         }
                     })
+
             {
                 @Override
                 protected Map<String, String> getParams() throws AuthFailureError {
                     Map<String, String> params = new HashMap<>();
                     params.put("movie_id", movie_id);
-                    return  params;
+                    return params;
                 }
             };
 
@@ -285,23 +349,18 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
-
-        }
-
-        @Override
         protected void onPostExecute(Void aVoid) {
-            EnjoyAdapter eAdapter = new EnjoyAdapter(tags, DetailActivity.this, res);
-            RecyclerView.LayoutManager layoutManager2 = new LinearLayoutManager(DetailActivity.this, LinearLayoutManager.HORIZONTAL, false);
-            re_tag.setLayoutManager(layoutManager2);
-            re_tag.setAdapter(eAdapter);
+            RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this);
+            re_review.setLayoutManager(layoutManager);
+            re_review.setAdapter(rvAdapter);
 
+            //tv_sum에 접근하지 못 함
+            //tv_sum.setText("총 " + reviews.size() + "건");
             progressDialog.dismiss();
         }
-    }*/
+    }
 
-    private void tag_regist(final String edit_get){
+    private void tag_regist(final String edit_get) {
         final String movie_id = this.mID;
         final String tagger = this.user_name;
 
@@ -313,8 +372,13 @@ public class DetailActivity extends AppCompatActivity {
                             JSONObject jsonObject = new JSONObject(response);
                             String success = jsonObject.getString("success");
 
-                            if(success.equals("1")){
+                            if (success.equals("1")) {
                                 Toast.makeText(DetailActivity.this, "태그 등록완료", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            if (success.equals("2")) {
+                                Toast.makeText(DetailActivity.this, "이미 존재하는 태그입니다.", Toast.LENGTH_SHORT).show();
+                                return;
                             }
 
                         } catch (JSONException e) {
@@ -327,8 +391,7 @@ public class DetailActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
 
                     }
-                })
-        {
+                }) {
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<>();
                 params.put("movie_id", movie_id);
@@ -340,8 +403,6 @@ public class DetailActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(stringRequest);
-
-
     }
 
     private void get_tag() {
@@ -357,18 +418,18 @@ public class DetailActivity extends AppCompatActivity {
                             String success = jsonObject.getString("success");
                             JSONArray jsonArray = jsonObject.getJSONArray("read");
 
-                            if(success.equals("1")){
+                            if (success.equals("1")) {
 
-                                for(int i =0;i<jsonArray.length();i++){
+                                for (int i = 0; i < jsonArray.length(); i++) {
                                     JSONObject object = jsonArray.getJSONObject(i);
+                                    String t0 = object.getString("tno").trim();
                                     String t1 = object.getString("tagger").trim();
                                     String t2 = object.getString("tag_text").trim();
-                                    int t3 = object.getInt("tag_like");
+                                    String t3 = object.getString("tag_like").trim();
 
-                                    tags.add(new Enjoy(t1, t2, t3));
+                                    tags.add(new Enjoy(t0, t1, t2, t3));
 
-                                    EnjoyAdapter eAdapter = new EnjoyAdapter(tags, DetailActivity.this, res);
-                                    RecyclerView.LayoutManager layoutManager2 = new LinearLayoutManager(DetailActivity.this, LinearLayoutManager.HORIZONTAL, false);
+                                    RecyclerView.LayoutManager layoutManager2 = new GridLayoutManager(DetailActivity.this, 3);
                                     re_tag.setLayoutManager(layoutManager2);
                                     re_tag.setAdapter(eAdapter);
                                 }
@@ -386,13 +447,12 @@ public class DetailActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
 
                     }
-                })
-        {
+                }) {
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<>();
                 params.put("movie_id", movie_id);
-                return  params;
+                return params;
             }
         };
 

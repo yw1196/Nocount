@@ -72,6 +72,7 @@
 
                 <Button
                     android:layout_alignParentRight="true"
+                    android:background="@drawable/btn_like"
                     android:id="@+id/rc_btnlike"
                     android:layout_width="50dp"
                     android:layout_height="30dp"

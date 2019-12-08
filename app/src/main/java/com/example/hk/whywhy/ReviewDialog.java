@@ -3,6 +3,8 @@ package com.example.hk.whywhy;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -21,9 +23,13 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,33 +46,36 @@ public class ReviewDialog extends Dialog {
     private EditText review_edit;
     private String title, release, director, rate, img_url, mID, user_name;
     private static String URL_REGREPLY = "http://kimyw1196.dothome.co.kr/addreply.php";
-    SessionManager sessionManager;
+    private SessionManager sessionManager;
+    private ReviewAdapter rvAdapter;
+    private ArrayList<Review> reviews;
+
 
     //private String mTitle;
     //private String mContent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            WindowManager.LayoutParams lpWindow = new WindowManager.LayoutParams();
-            lpWindow.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-            lpWindow.dimAmount = 0.8f;
-            getWindow().setAttributes(lpWindow);
+        super.onCreate(savedInstanceState);
+        WindowManager.LayoutParams lpWindow = new WindowManager.LayoutParams();
+        lpWindow.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        lpWindow.dimAmount = 0.8f;
+        getWindow().setAttributes(lpWindow);
 
         setContentView(R.layout.activity_popup);
 
-        review_title = (TextView)findViewById(R.id.review_title);
-        review_release = (TextView)findViewById(R.id.review_release);
-        review_director = (TextView)findViewById(R.id.review_director);
-        review_rate = (TextView)findViewById(R.id.review_rate);
+        review_title = (TextView) findViewById(R.id.review_title);
+        review_release = (TextView) findViewById(R.id.review_release);
+        review_director = (TextView) findViewById(R.id.review_director);
+        review_rate = (TextView) findViewById(R.id.review_rate);
 
-        rating_bar = (RatingBar)findViewById(R.id.rating_bar);
+        rating_bar = (RatingBar) findViewById(R.id.rating_bar);
 
-        btn_cancle = (Button)findViewById(R.id.btn_cancle);
-        btn_confrim = (Button)findViewById(R.id.btn_confirm);
-        review_edit = (EditText)findViewById(R.id.review_edit);
+        btn_cancle = (Button) findViewById(R.id.btn_cancle);
+        btn_confrim = (Button) findViewById(R.id.btn_confirm);
+        review_edit = (EditText) findViewById(R.id.review_edit);
 
-        review_poster = (ImageView)findViewById(R.id.review_poster);
+        review_poster = (ImageView) findViewById(R.id.review_poster);
 
         review_title.setText(title);
         review_release.setText(release);
@@ -74,27 +83,38 @@ public class ReviewDialog extends Dialog {
         review_rate.setText(rate);
         GlideApp.with(this.getContext())
                 .load(img_url)
-                .override(300,400)
+                .override(300, 400)
                 .into(review_poster);
 
         sessionManager = new SessionManager(getContext());
-        sessionManager.checkLogin();
 
         HashMap<String, String> user = sessionManager.getUserDetail();
         user_name = user.get(sessionManager.NAME);
+
+        //현재 시간 구하기
+        // 현재시간을 msec 으로 구한다.
+        long now = System.currentTimeMillis();
+        // 현재시간을 date 변수에 저장한다.
+        Date date = new Date(now);
+        // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
+        SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // nowDate 변수에 값을 저장한다.
+        final String formatDate = sdfNow.format(date);
 
         btn_confrim.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Regist();
+                reviews.add(0, new Review("empty",user_name, review_edit.getText().toString(), String.valueOf(rating_bar.getRating()), "0", formatDate));
+                rvAdapter.notifyItemInserted(0);
                 ReviewDialog.this.dismiss();
+
             }
         });
 
         btn_cancle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //to do
                 ReviewDialog.this.dismiss();
             }
         });
@@ -102,8 +122,8 @@ public class ReviewDialog extends Dialog {
 
     }
 
-    public  ReviewDialog(Context context, String title,
-                         String release, String director, String rate, String img_url, String mID) {
+    public ReviewDialog(Context context, String title,
+                        String release, String director, String rate, String img_url, String mID, ArrayList<Review> reviews, ReviewAdapter rvAdapter) {
         super(context, android.R.style.Theme_Translucent_NoTitleBar);
 
         this.title = title;
@@ -112,10 +132,12 @@ public class ReviewDialog extends Dialog {
         this.rate = rate;
         this.img_url = img_url;
         this.mID = mID;
+        this.reviews = reviews;
+        this.rvAdapter = rvAdapter;
         Log.d("HEREHERE", this.mID);
     }
 
-    private void Regist(){
+    private void Regist() {
 
         final String movie_id = this.mID;
         final String replyer = this.user_name;
@@ -126,7 +148,7 @@ public class ReviewDialog extends Dialog {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        try{
+                        try {
                             JSONObject jsonObject = new JSONObject(response);
                             String success = jsonObject.getString("success");
 

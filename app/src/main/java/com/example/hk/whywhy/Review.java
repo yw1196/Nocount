@@ -6,13 +6,15 @@ package com.example.hk.whywhy;
 
 public class Review {
 
+    private String rno;
     private String replyer;
     private String reply;
     private String rating;
     private String regdate;
     private String likeno;
 
-    public Review(String replyer, String reply, String rating, String likeno, String regdate) {
+    public Review(String rno, String replyer, String reply, String rating, String likeno, String regdate) {
+        this.rno = rno;
         this.replyer = replyer;
         this.reply = reply;
         this.rating = rating;
@@ -20,6 +22,7 @@ public class Review {
         this.regdate = regdate;
     }
 
+    public String getRno() {return rno;}
     public String getReplyer() {return replyer;}
     public String getReply() {return reply;}
     public String getRating() {return rating;}
