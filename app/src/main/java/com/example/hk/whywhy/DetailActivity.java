@@ -52,7 +52,7 @@ public class DetailActivity extends AppCompatActivity {
     private String img_url;
     private String link;
     private String mID;
-    private String user_name, edit_get;
+    private String user_name, user_id, edit_get;
     private Bitmap image, resized_image;
     private int width = 300;
     private int height = 400;
@@ -152,7 +152,8 @@ public class DetailActivity extends AppCompatActivity {
                 //로그인 했는지 확인 해야 한다.
                 if(!sessionManager.isLogin()) {
                     Toast.makeText(DetailActivity.this, "로그인이 필요한 서비스입니다.", Toast.LENGTH_SHORT).show();
-                    sessionManager.checkLogin();
+                    //굳이 loaginActivity를 호출할 이유는 없을 것 같다.
+                    //sessionManager.checkLogin();
                     return;
                 }
 
@@ -165,6 +166,7 @@ public class DetailActivity extends AppCompatActivity {
                     get_tag();
                     eAdapter.notifyDataSetChanged();
                     Log.d("hiiz", String.valueOf(tags.size()));
+                    TI_edit.setText(null);
                     return;
                 }
                 if (edit_get.trim().equals("")) {
@@ -178,21 +180,16 @@ public class DetailActivity extends AppCompatActivity {
                     if (tags.size() == 1 && edit_get.equals(tags.get(i).getTag_text())) {
                         Toast.makeText(DetailActivity.this, "이미 존재하는 태그입니다.", Toast.LENGTH_SHORT).show();
                         Log.d("yyy", "중복값있음");
+                        TI_edit.setText(null);
                         break;
                     }
-                    //checker 확인 부분과 중복되어서 삭제
-                    /*else if (tags.size() == 1 && !edit_get.equals(tags.get(i).getTag_text())) {
-                        tag_regist(edit_get);
-                        //tags.add(0, new Enjoy(user_name, edit_get, 0));
-                        //eAdapter.notifyDataSetChanged();
-                        break;
-                    }*/
                     for (int j = 0; j < i+1; j++) {
                         Log.d("text", tags.get(j).getTag_text());
                         if (edit_get.equals(tags.get(j).getTag_text())) {
                             Toast.makeText(DetailActivity.this, "이미 존재하는 태그입니다.", Toast.LENGTH_SHORT).show();
                             Log.d("zzz", "중복값있음");
                             checker = false;
+                            TI_edit.setText(null);
                             break;
                         }
                     }
@@ -202,14 +199,16 @@ public class DetailActivity extends AppCompatActivity {
                     tag_regist(edit_get);
                     tags.add(0, new Enjoy("empty", user_name, edit_get, "0"));
                     eAdapter.notifyItemInserted(0);
+                    TI_edit.setText(null);
                 }
             }
         });
 
 
-            sessionManager = new SessionManager(this);
-            HashMap<String, String> user = sessionManager.getUserDetail();
-            user_name = user.get(sessionManager.NAME);
+        sessionManager = new SessionManager(this);
+        HashMap<String, String> user = sessionManager.getUserDetail();
+        user_name = user.get(sessionManager.NAME);
+        user_id = user.get(sessionManager.ID);
         //get_tag 메소드를 사용하여 태그 정보를 DB로부터 받아와 리사이클러뷰 어뎁터에 연결 후 화면에 표시
         get_tag();
 
@@ -363,6 +362,7 @@ public class DetailActivity extends AppCompatActivity {
     private void tag_regist(final String edit_get) {
         final String movie_id = this.mID;
         final String tagger = this.user_name;
+        final String id = this.user_id;
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_ADDTAG,
                 new Response.Listener<String>() {
@@ -397,6 +397,7 @@ public class DetailActivity extends AppCompatActivity {
                 params.put("movie_id", movie_id);
                 params.put("tagger", tagger);
                 params.put("tag_text", edit_get);
+                params.put("id", id);
                 return params;
             }
         };

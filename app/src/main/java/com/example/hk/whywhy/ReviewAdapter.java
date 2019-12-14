@@ -3,6 +3,7 @@ package com.example.hk.whywhy;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.os.AsyncTask;
 
 /**
  * Created by HK on 2019-11-17.
@@ -26,6 +27,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,6 +41,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
     private ArrayList<Review> reviews;
     private Context context;
     private static String URL_LIKEACTION = "http://kimyw1196.dothome.co.kr/likeaction.php";
+    private static String URL_GETLIKE = "http://kimyw1196.dothome.co.kr/getreviewlike.php";
 
 
 
@@ -49,12 +52,12 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
 
         public ViewHolder(View itemView) {
             super(itemView);
-        rc_rate = (RatingBar)itemView.findViewById(R.id.rc_rate);
-        rc_mean = (TextView)itemView.findViewById(R.id.rc_mean);
-        rc_review = (TextView)itemView.findViewById(R.id.rc_review);
-        rc_nick = (TextView)itemView.findViewById(R.id.rc_nick);
-        rc_date = (TextView)itemView.findViewById(R.id.rc_date);
-        rc_btnlike = (Button)itemView.findViewById(R.id.rc_btnlike);
+            rc_rate = (RatingBar)itemView.findViewById(R.id.rc_rate);
+            rc_mean = (TextView)itemView.findViewById(R.id.rc_mean);
+            rc_review = (TextView)itemView.findViewById(R.id.rc_review);
+            rc_nick = (TextView)itemView.findViewById(R.id.rc_nick);
+            rc_date = (TextView)itemView.findViewById(R.id.rc_date);
+            rc_btnlike = (Button)itemView.findViewById(R.id.rc_btnlike);
         }
     }
 
@@ -72,7 +75,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ReviewAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final ReviewAdapter.ViewHolder holder, final int position) {
 
 
 
@@ -99,14 +102,55 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
                     Log.d("rno값", reviews.get(position).getRno());
 
                     likeaction(reviews.get(position).getRno(), get_id);
-                }else{
-                    Toast.makeText(context, "로그인이 필요해요~", Toast.LENGTH_SHORT).show();
-                }
+                    StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_GETLIKE,
+                            new Response.Listener<String>() {
+                                @Override
+                                public void onResponse(String response) {
+                                    try {
+                                        JSONObject jsonObject = new JSONObject(response);
+                                        String success = jsonObject.getString("success");
+                                        JSONArray jsonArray = jsonObject.getJSONArray("read");
 
+                                        if(success.equals("1")){
+
+                                            for(int i=0; i<jsonArray.length();i++){
+
+                                                JSONObject object = jsonArray.getJSONObject(i);
+
+                                                String like = object.getString("likeno").trim();
+                                                holder.rc_btnlike.setText(like);
+                                            }
+
+                                        }
+
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            },
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+
+                                }
+                            })
+                    {
+                        @Override
+                        protected Map<String, String> getParams() throws AuthFailureError {
+                            Map<String, String> params = new HashMap<>();
+                            params.put("rno", reviews.get(position).getRno());
+                            return params;
+                        }
+                    };
+
+                    RequestQueue requestQueue = Volley.newRequestQueue(context);
+                    requestQueue.add(stringRequest);
+
+                }else{
+                    Toast.makeText(context, "로그인이 필요한 서비스입니다.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
-
-
     }
 
     @Override
@@ -124,11 +168,11 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
                             String success = jsonObject.getString("success");
 
                             if(success.equals("1")){
-                                Toast.makeText(context, "좋아요~", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "좋아요", Toast.LENGTH_SHORT).show();
                             }
 
                             if(success.equals("2")){
-                                Toast.makeText(context, "좋아요 취소~", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "취소", Toast.LENGTH_SHORT).show();
                             }
 
                             if(success.equals("0")){
@@ -161,4 +205,50 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
         requestQueue.add(stringRequest);
     }
 
+    private void getreviewlike(final String rno){
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_GETLIKE,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(response);
+                            String success = jsonObject.getString("success");
+                            JSONArray jsonArray = jsonObject.getJSONArray("read");
+
+                            if(success.equals("1")){
+
+                                for(int i=0; i<jsonArray.length();i++){
+
+                                    JSONObject object = jsonArray.getJSONObject(i);
+
+                                    String like = object.getString("likeno").trim();
+
+                                }
+
+                            }
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                })
+        {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("rno", rno);
+                return params;
+            }
+        };
+
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
+        requestQueue.add(stringRequest);
+
+    }
 }

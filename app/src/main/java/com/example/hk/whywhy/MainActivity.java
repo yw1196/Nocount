@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.app.ProgressDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.os.AsyncTask;
@@ -89,18 +88,9 @@ public class MainActivity extends AppCompatActivity {
 
     private class Description extends AsyncTask<Void, Void, Void> {
 
-        //진행바표시
-        private ProgressDialog progressDialog;
-
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
-            //진행다일로그 시작
-            progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progressDialog.setMessage("잠시 기다려 주세요.");
-            progressDialog.show();
 
         }
 
@@ -127,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                     Element dElem = elem.select("dt[class=tit_t2]").next().first();
                     String my_director = "감독: " + dElem.select("a").text();
                     String my_rate = "네이버 평점:" + elem.select("li div[class=star_t1] span[class=num]").text();
-
+                    Log.d("현재상영작 감독 - ",my_director);
                     //Log.d("test", "test" + mTitle);
                     //ArrayList에 계속 추가한다.
                     list.add(new ItemObject(my_title, my_imgUrl, my_link, my_release, my_director, my_rate));
@@ -143,9 +133,9 @@ public class MainActivity extends AppCompatActivity {
                     //특정하기 힘들다... 저 앞에 있는집의 오른쪽으로 두번째집의 건너집이 바로 우리집이야 하는 식이다.
                     Element rElem2 = elem.select("dl[class=info_txt1] dt").next().first();
                     String my_release2 = rElem2.select("dd").text();
-                    Element dElem2 = elem.select("dt[class=tit_t2]").next().first();
+                    Element dElem2 = elem.select("dl > dd:nth-child(3) > dl > dt.tit_t2").next().first();
                     String my_director2 = "감독: " + dElem2.select("a").text();
-
+                    Log.d("예정작 감독 - ", my_director2);
                     list2.add(new ItemObject(my_title2, my_imgUrl2, my_link2, my_release2, my_director2, " "));
                     counter2++;
                     if(counter2 >= 10)
@@ -153,8 +143,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 //추출한 전체 <li> 출력해 보자.
-                Log.d("debug :", "List " + mElementDataSize);
-                Log.d("debug :", "List " + mElementDataSize2);
+                //Log.d("debug :", "List " + mElementDataSize);
+                //Log.d("debug :", "List " + mElementDataSize2);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -174,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
             recyclerView2.setLayoutManager(layoutManager2);
             recyclerView2.setAdapter(myAdapter2);
 
-            progressDialog.dismiss();
         }
     }
 
