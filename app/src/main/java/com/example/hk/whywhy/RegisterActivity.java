@@ -1,5 +1,6 @@
 package com.example.hk.whywhy;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -135,6 +136,9 @@ public class RegisterActivity extends AppCompatActivity {
                 }
 
                 Regist();
+                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                startActivity(intent);
+
 
             }
         });

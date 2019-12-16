@@ -160,6 +160,17 @@ public class DetailActivity extends AppCompatActivity {
                 edit_get = TI_edit.getText().toString().trim();
                 boolean checker = true;
 
+                if (edit_get.trim().equals("")) {
+                    Toast.makeText(DetailActivity.this, "태그를 입력해주세요", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if(edit_get.trim().length() > 10){
+                    Toast.makeText(DetailActivity.this, "태그는 10자 이내로 적어주세요", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+
                 //tags 어레이가 비어있으면 editText값을 DB에 저장 후 recyclerview에 adapter를 연결 하여 뷰 갱신
                 if (tags.isEmpty()) {
                     tag_regist(edit_get);
@@ -169,10 +180,7 @@ public class DetailActivity extends AppCompatActivity {
                     TI_edit.setText(null);
                     return;
                 }
-                if (edit_get.trim().equals("")) {
-                    Toast.makeText(DetailActivity.this, "태그를 입력해주세요", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+
 
                 Log.d("size", String.valueOf(tags.size()));
                 //tags의 size가 1이 될 경우 이중포문이 돌아가지 않게 된다. 어떻게 해결해야 하지?

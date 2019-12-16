@@ -104,8 +104,8 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
                 intent.putExtra("rate", Html.fromHtml(mUserRatingArrayList.get(position)).toString());
                 intent.putExtra("link", Html.fromHtml(mLinkArrayList.get(position)).toString());
                 mContext.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            }
-        });
+    }
+});
         holder.mImageViewImage.setImageBitmap(mImageArrayList.get(position));
         if (holder.mImageViewImage.getDrawable() == null) {
             holder.mImageViewImage.setImageResource(R.drawable.ic_launcher_background);

@@ -104,6 +104,13 @@ public class ReviewDialog extends Dialog {
         btn_confrim.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                if (review_edit.getText().toString().trim().equals("")) {
+                    Toast.makeText(getContext(), "리뷰를 입력해주세요", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+
                 Regist();
                 reviews.add(0, new Review("empty",user_name, review_edit.getText().toString(), String.valueOf(rating_bar.getRating()), "0", formatDate));
                 rvAdapter.notifyItemInserted(0);

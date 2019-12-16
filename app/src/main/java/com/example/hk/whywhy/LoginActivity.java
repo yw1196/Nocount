@@ -108,16 +108,16 @@ public class LoginActivity extends AppCompatActivity {
                                     loading.setVisibility(View.GONE);
                                     btn_login.setVisibility(View.VISIBLE);
                                 }
-                            }
-
-                            if (success.equals("0")){
+                            }else if (success.equals("0")){
                                 Toast.makeText(LoginActivity.this, "비밀번호가 올바르지 않습니다.", Toast.LENGTH_SHORT).show();
                                 loading.setVisibility(View.GONE);
                                 btn_login.setVisibility(View.VISIBLE);
-                            }
-
-                            if (success.equals("2")){
+                            }else if (success.equals("2")){
                                 Toast.makeText(LoginActivity.this, "존재하지 않는 이메일 입니다.", Toast.LENGTH_SHORT).show();
+                                loading.setVisibility(View.GONE);
+                                btn_login.setVisibility(View.VISIBLE);
+                            }else{
+                                Toast.makeText(LoginActivity.this, "이메일, 비밀번호를 다시 확인해주세요", Toast.LENGTH_SHORT).show();
                                 loading.setVisibility(View.GONE);
                                 btn_login.setVisibility(View.VISIBLE);
                             }
